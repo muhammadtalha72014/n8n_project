@@ -1,0 +1,382 @@
+{
+  "name": "Customer Support Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "9acf5850-54a1-4f68-ad1a-a48b5994f2c7",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "GsFOUmKltY2URp41",
+          "name": "talhaansari.admissions@gmail.com"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Customer Support Workflow",
+        "height": 80,
+        "width": 540,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        40,
+        -120
+      ],
+      "typeVersion": 1,
+      "id": "12af27ae-37ef-4530-85d9-92e1e0561a07",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.text }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "n8n",
+              "description": "Any email related to n8n which describe the update of n8n and also the confirmation of any task."
+            },
+            {
+              "category": "other",
+              "description": "Any email which is not related to n8n and related to university."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        220,
+        0
+      ],
+      "id": "860d5071-0680-449d-837a-de99f8e81adc",
+      "name": "Text Classifier"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-1.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        160,
+        200
+      ],
+      "id": "aff1bda3-9325-44e5-b053-6e45b7d7a72b",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "bZW7yAAcEA16LyBr",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        580,
+        100
+      ],
+      "id": "9f61ac80-8b77-481b-b3eb-e41f79ba3a5c",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "options": {
+          "systemMessage": "=# Overview\nYou are a helful assistant of n8n and responds to all incomming mails related to n8n using knowledge tools.\n\n## Instruction\n- Greet the customer\n- Your output should be professional and use emojis\n- Sign off the customer using Mr. Ben from n8n community\n\n# Output\nOutput only bodycontent of that email\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        920,
+        -20
+      ],
+      "id": "49f08a97-fd2a-4067-831e-8211c836aaea",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-1.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        840,
+        200
+      ],
+      "id": "6930d1b0-fe8f-4168-9524-a1a68d0ccfa7",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "bZW7yAAcEA16LyBr",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Call this tool as knowledge base for n8n",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "demo",
+          "mode": "list",
+          "cachedResultName": "demo"
+        },
+        "options": {
+          "pineconeNamespace": "FAQ"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        1000,
+        240
+      ],
+      "id": "cabc615e-76ea-4b41-b77d-30ba49386d0d",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "tFpD7YACVZrK21Ie",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1000,
+        400
+      ],
+      "id": "f1bd9a64-40c6-44ac-9b2f-72bfd3207daf",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "kYhm7cLmwnXZKIRk",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "emailType": "text",
+        "message": "={{ $json.output }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1280,
+        -20
+      ],
+      "id": "78f552fa-5c6e-4410-bc66-597dd1bebc2f",
+      "name": "Reply to a message",
+      "webhookId": "54fd403b-9714-433e-af3b-f14792083b6a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "GsFOUmKltY2URp41",
+          "name": "talhaansari.admissions@gmail.com"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Gmail Trigger": [
+      {
+        "json": {
+          "id": "19808515aab42742",
+          "threadId": "19808515aab42742",
+          "labelIds": [
+            "UNREAD",
+            "CATEGORY_UPDATES",
+            "INBOX"
+          ],
+          "sizeEstimate": 13642,
+          "headers": {
+            "delivered-to": "Delivered-To: talhaansari.admissions@gmail.com",
+            "received": "Received: from mail-sor-f73.google.com (mail-sor-f73.google.com. [209.85.220.73])\r\n        by mx.google.com with SMTPS id 98e67ed59e1d1-31c3eb2c4bdsor5611365a91.4.2025.07.14.02.43.26\r\n        for <talhaansari.admissions@gmail.com>\r\n        (Google Transport Security);\r\n        Mon, 14 Jul 2025 02:43:26 -0700 (PDT)",
+            "x-received": "X-Received: by 2002:a17:90b:46:b0:311:a561:86f3 with SMTP id\r\n 98e67ed59e1d1-31c4f48baa6mr19874397a91.6.1752486205781; Mon, 14 Jul 2025\r\n 02:43:25 -0700 (PDT)",
+            "arc-seal": "ARC-Seal: i=1; a=rsa-sha256; t=1752486206; cv=none;\r\n        d=google.com; s=arc-20240605;\r\n        b=UouhZh0X7TZI5n8K21yRSaAjHehriSgKWrP2FoqezmKuQi8Pa0B6DchHCd5/DSd5eX\r\n         VsEGSSZJO3/+PMG5Bq4Bmh421h+qFjF9v9/js1MO4YIkkk7JGsB6efotv09e4g2/U7S5\r\n         MBgGDrWspEvf0T42R7ES6BbxjGSLYaLk9rPy8Aj74Tx9ci3OjMN1GP5WH5x7HwyqBCRa\r\n         jFpRYNiGBCSfRlKnBWR3L9PYW7AYdZxiYquw1+sDQYHnrlUmEKcSrx4nlDZSOjEUNKF1\r\n         f5UaqbWXpqpLyGblJCs6jDwjmSERdq2AnMWuCdQUeXz7Ue+qExqB9uERUccYA2kam5Zn\r\n         SN0A==",
+            "arc-message-signature": "ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;\r\n        h=to:from:subject:message-id:feedback-id:date:mime-version\r\n         :dkim-signature;\r\n        bh=LacAiHLEfF2tpnJNUIAm9FQV8Ieg72oBFs33SGK11HA=;\r\n        fh=dUzxjdCDJ/lH3ILtp+cj+19mw+0Y3lgBlxtixABb6xg=;\r\n        b=PGdrWW4BLemd7jy0LENcZ/AUHPOELJESC9rVn61TrEmugFIs66KYJxTj2N5AHuJRR4\r\n         cRZ8SPEclpOERn7Jhol/UFSRSXdons5gGIAPohJv5n2B0gFmC/sWyEL38IdKbbwATX6C\r\n         1mYCz/L9nP8vRSYCj0Aa+8UgbUIqDvXE3gy8Pyg6s6X+Pt83OMJXN0uJsQcN5ahMu8bG\r\n         VOesHSywsnfKVdZCaBWFg7TPq3BT7EIhu6VMacesQSo7D/GMvmxbTqp33/oEqscvwMMI\r\n         qWAuBBnlBX/HES9RBeqHl+4MVY3+t+ud/BH78wr9F33qGgmH0HDKgyESGLugFSGlo6VT\r\n         B/gg==;\r\n        dara=google.com",
+            "arc-authentication-results": "ARC-Authentication-Results: i=1; mx.google.com;\r\n       dkim=pass header.i=@accounts.google.com header.s=20230601 header.b=Vceon9vO;\r\n       spf=pass (google.com: domain of 3pdf0aagtapwrs-vitp2eggsyrxw.ksskpi.gsq@gaia.bounces.google.com designates 209.85.220.73 as permitted sender) smtp.mailfrom=3PdF0aAgTAPwrs-vitp2eggsyrxw.ksskpi.gsq@gaia.bounces.google.com;\r\n       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=accounts.google.com;\r\n       dara=pass header.i=@gmail.com",
+            "return-path": "Return-Path: <3PdF0aAgTAPwrs-vitp2eggsyrxw.ksskpi.gsq@gaia.bounces.google.com>",
+            "received-spf": "Received-SPF: pass (google.com: domain of 3pdf0aagtapwrs-vitp2eggsyrxw.ksskpi.gsq@gaia.bounces.google.com designates 209.85.220.73 as permitted sender) client-ip=209.85.220.73;",
+            "authentication-results": "Authentication-Results: mx.google.com;\r\n       dkim=pass header.i=@accounts.google.com header.s=20230601 header.b=Vceon9vO;\r\n       spf=pass (google.com: domain of 3pdf0aagtapwrs-vitp2eggsyrxw.ksskpi.gsq@gaia.bounces.google.com designates 209.85.220.73 as permitted sender) smtp.mailfrom=3PdF0aAgTAPwrs-vitp2eggsyrxw.ksskpi.gsq@gaia.bounces.google.com;\r\n       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=accounts.google.com;\r\n       dara=pass header.i=@gmail.com",
+            "dkim-signature": "DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;\r\n        d=accounts.google.com; s=20230601; t=1752486206; x=1753091006; dara=google.com;\r\n        h=to:from:subject:message-id:feedback-id:date:mime-version:from:to:cc\r\n         :subject:date:message-id:reply-to;\r\n        bh=LacAiHLEfF2tpnJNUIAm9FQV8Ieg72oBFs33SGK11HA=;\r\n        b=Vceon9vOEBXl4lAcPiZL2IM1HNcNw5M9+LVTEIiWMDXokT5HK4uqjf59NI+SjsFJ44\r\n         Nq8CFDPUHrGh20E2V+zBXo8qgKTWCOLyCyeJeNtfIBgkrFp50vNTm/5nwG+l7BcEFNbX\r\n         avdHLAxv26o9R0BXgX407PUNAVQn3Vix0hBlGCFs1cEx5N4dUf8a1WzZSGgXZUFJG5Xu\r\n         Y0Io6U8cYZ7MLngIMchcUUegwpFbM/SbO66N/sfSgr9Op5SifwUgyJpBFLgd8qNSxM7K\r\n         b447WBboU7/E/LbUS3/NLLdUF9CyEk+04p5sg4ZJma7Awe4l9DaqstjGCHEWh8X7ml74\r\n         /Z0A==",
+            "x-google-dkim-signature": "X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;\r\n        d=1e100.net; s=20230601; t=1752486206; x=1753091006;\r\n        h=to:from:subject:message-id:feedback-id:date:mime-version\r\n         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;\r\n        bh=LacAiHLEfF2tpnJNUIAm9FQV8Ieg72oBFs33SGK11HA=;\r\n        b=bZ2dkFQkAhT8Z8UH5PCg833QHtbt0yu36tvZxrwdrPW00s1WFfwKBW6alouLciLt6n\r\n         HLVC+NvmL2+oM5kAtk9WjjNWeMJCt39crQ/TIswgahpLuOnxWCCUjKTj3Pi7m8PiNlHz\r\n         JREq+DZhYsHhD095lo5gZdnclRZXjpler9GZu/wfoEqZZAGdOQvONJyYaO4LXY/GWiYU\r\n         hyis5LHkZi/lAoSJmU4JnpDrN5OOY9WWNBse0Qxjdq+LyWJCN5O+8Zy6cVo1h1LY0ie1\r\n         ZzDQDCQzHnUkSsaVUCz7nCQ39PZrWvx+ut9yiQ82kfXFeY+5k7iuzi+5Uhs908+ObsrD\r\n         7rfg==",
+            "x-gm-message-state": "X-Gm-Message-State: AOJu0YzWTT0erGSMb/SqgqjkgROywz2pn/kH277npQCLecY1LgMdRt24\r\n\ty8S4FpiL1YAZmC2+L2ZwTWZ6tDAcw0WxdQFe9rNpIU65SMLubsgz8cRVoNIkDpK8N3Yqt3TNPYa\r\n\tpmJlmsII5NvlLDCqY41QjRb/AudJj8BgnvO8vFgQ=",
+            "x-google-smtp-source": "X-Google-Smtp-Source: AGHT+IGmHNYD4PpUOF0T7Ck46QKaJ92TJ5go66JTY+XQvSH8D3iVfqf/HlQKgxiXNLoGY6zh/4K/OoTIAMWXlXaQhgJI4g==",
+            "mime-version": "MIME-Version: 1.0",
+            "date": "Date: Mon, 14 Jul 2025 09:43:25 GMT",
+            "x-account-notification-type": "X-Account-Notification-Type: 127",
+            "feedback-id": "Feedback-ID: 127:account-notifier",
+            "x-notifications": "X-Notifications: 23ca60d0686a0000",
+            "x-notifications-bounce-info": "X-Notifications-Bounce-Info: AWoTSIGhsg2ojZ8IdZbnUIn1srHPqtjRI6UljsV6VRZ0U3tRYjavabVTg6ZTMBtkiCSpDRxKgQ3luf1f2ZBYc7axEZDvRCkFNpvHgTlcWMhjrYYrtMF4u4vzuJr40Q5jb9xo-5jawD5CLnQJ-lhXDZq2LW49TNV_rWQiXsJAEEHBNN1kUMR93nIacGECZuIpODfxLj03GLITe20enkbwl1JugyFSUouilANjAwNjA0MDQxNTM1NTk2OTMzMg",
+            "message-id": "Message-ID: <w-RlSs1lTM7xaDlZdVht0w@notifications.google.com>",
+            "subject": "Subject: Security alert",
+            "from": "From: Google <no-reply@accounts.google.com>",
+            "to": "To: talhaansari.admissions@gmail.com",
+            "content-type": "Content-Type: multipart/alternative; boundary=\"000000000000c4f6c50639e07dcd\""
+          },
+          "html": "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"format-detection\" content=\"email=no\"/><meta name=\"format-detection\" content=\"date=no\"/><style nonce=\"jJyE8B1N9n3UlViAlRZs7w\">.awl a {color: #FFFFFF; text-decoration: none;} .abml a {color: #000000; font-family: Roboto-Medium,Helvetica,Arial,sans-serif; font-weight: bold; text-decoration: none;} .adgl a {color: rgba(0, 0, 0, 0.87); text-decoration: none;} .afal a {color: #b0b0b0; text-decoration: none;} @media screen and (min-width: 600px) {.v2sp {padding: 6px 30px 0px;} .v2rsp {padding: 0px 10px;}} @media screen and (min-width: 600px) {.mdv2rw {padding: 40px 40px;}} </style><link href=\"//fonts.googleapis.com/css?family=Google+Sans\" rel=\"stylesheet\" type=\"text/css\" nonce=\"jJyE8B1N9n3UlViAlRZs7w\"/></head><body style=\"margin: 0; padding: 0;\" bgcolor=\"#FFFFFF\"><table width=\"100%\" height=\"100%\" style=\"min-width: 348px;\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" lang=\"en\"><tr height=\"32\" style=\"height: 32px;\"><td></td></tr><tr align=\"center\"><td><div itemscope itemtype=\"//schema.org/EmailMessage\"><div itemprop=\"action\" itemscope itemtype=\"//schema.org/ViewAction\"><link itemprop=\"url\" href=\"https://accounts.google.com/AccountChooser?Email=talhaansari.admissions@gmail.com&amp;continue=https://myaccount.google.com/alert/nt/1752486205000?rfn%3D127%26rfnc%3D1%26eid%3D-6684163010321886283%26et%3D0\"/><meta itemprop=\"name\" content=\"Review Activity\"/></div></div><table border=\"0\" cellspacing=\"0\" cellpadding=\"0\" style=\"padding-bottom: 20px; max-width: 516px; min-width: 220px;\"><tr><td width=\"8\" style=\"width: 8px;\"></td><td><div style=\"border-style: solid; border-width: thin; border-color:#dadce0; border-radius: 8px; padding: 40px 20px;\" align=\"center\" class=\"mdv2rw\"><img src=\"https://www.gstatic.com/images/branding/googlelogo/2x/googlelogo_color_74x24dp.png\" width=\"74\" height=\"24\" aria-hidden=\"true\" style=\"margin-bottom: 16px;\" alt=\"Google\"><div style=\"font-family: &#39;Google Sans&#39;,Roboto,RobotoDraft,Helvetica,Arial,sans-serif;border-bottom: thin solid #dadce0; color: rgba(0,0,0,0.87); line-height: 32px; padding-bottom: 24px;text-align: center; word-break: break-word;\"><div style=\"font-size: 24px;\">You allowed n8n.cloud access to some of your Google Account data </div><table align=\"center\" style=\"margin-top:8px;\"><tr style=\"line-height: normal;\"><td align=\"right\" style=\"padding-right:8px;\"><img width=\"20\" height=\"20\" style=\"width: 20px; height: 20px; vertical-align: sub; border-radius: 50%;;\" src=\"https://lh3.googleusercontent.com/a/ACg8ocJUpnSgF9IeCvDfY0K7Xm8W7f4okRDNQXgvRu98Gnv2hP0FFA=s96-c\" alt=\"\"></td><td><a style=\"font-family: &#39;Google Sans&#39;,Roboto,RobotoDraft,Helvetica,Arial,sans-serif;color: rgba(0,0,0,0.87); font-size: 14px; line-height: 20px;\">talhaansari.admissions@gmail.com</a></td></tr></table> </div><div style=\"font-family: Roboto-Regular,Helvetica,Arial,sans-serif; font-size: 14px; color: rgba(0,0,0,0.87); line-height: 20px;padding-top: 20px; text-align: left;\"><br><p>If you didn't allow n8n.cloud access to some of your Google Account data, someone else may be trying to access your Google Account data.</p><p>Take a moment now to check your account activity and secure your account.</p><div style=\"padding-top: 32px; text-align: center;\"><a href=\"https://accounts.google.com/AccountChooser?Email=talhaansari.admissions@gmail.com&amp;continue=https://myaccount.google.com/alert/nt/1752486205000?rfn%3D127%26rfnc%3D1%26eid%3D-6684163010321886283%26et%3D0\" target=\"_blank\" link-id=\"main-button-link\" style=\"font-family: &#39;Google Sans&#39;,Roboto,RobotoDraft,Helvetica,Arial,sans-serif; line-height: 16px; color: #ffffff; font-weight: 400; text-decoration: none;font-size: 14px;display:inline-block;padding: 10px 24px;background-color: #4184F3; border-radius: 5px; min-width: 90px;\">Check activity</a></div><div style=\"padding-top: 40px;\"><div style=\"border-bottom: thin solid #dadce0; padding-bottom: 24px;\">To make changes at any time to the access that n8n.cloud has to your data, go to your <a href=\"https://accounts.google.com/AccountChooser?Email=talhaansari.admissions@gmail.com&amp;continue=https://myaccount.google.com/connections/overview/AXgE0HPgSBVCd0yrS6vlJqLMITHzAGlYy29F0BLHi5pVfi3gAFloK7H9-72Sniv7N0zNMCi9igb0vEEv7nFiPciiYcs?utm_source%3Dsec_alert%26utm_medium%3Demail_notification%26force_all%3Dtrue\" style=\"text-decoration: none; color: #4285F4;\" target=\"_blank\">Google Account</a></div></div></div><div style=\"padding-top: 20px; font-size: 12px; line-height: 16px; color: #5f6368; letter-spacing: 0.3px; text-align: center\">You can also see security activity at<br><a style=\"color: rgba(0, 0, 0, 0.87);text-decoration: inherit;\">https://myaccount.google.com/notifications</a></div></div><div style=\"text-align: left;\"><div style=\"font-family: Roboto-Regular,Helvetica,Arial,sans-serif;color: rgba(0,0,0,0.54); font-size: 11px; line-height: 18px; padding-top: 12px; text-align: center;\"><div>You received this email to let you know about important changes to your Google Account and services.</div><div style=\"direction: ltr;\">&copy; 2025 Google LLC, <a class=\"afal\" style=\"font-family: Roboto-Regular,Helvetica,Arial,sans-serif;color: rgba(0,0,0,0.54); font-size: 11px; line-height: 18px; padding-top: 12px; text-align: center;\">1600 Amphitheatre Parkway, Mountain View, CA 94043, USA</a></div></div></div></td><td width=\"8\" style=\"width: 8px;\"></td></tr></table></td></tr><tr height=\"32\" style=\"height: 32px;\"><td></td></tr></table></body></html>",
+          "text": "[image: Google]\nYou allowed n8n.cloud access to some of your Google Account data\n\n\ntalhaansari.admissions@gmail.com\n\nIf you didn't allow n8n.cloud access to some of your Google Account data,\nsomeone else may be trying to access your Google Account data.\n\nTake a moment now to check your account activity and secure your account.\nCheck activity\n<https://accounts.google.com/AccountChooser?Email=talhaansari.admissions@gmail.com&continue=https://myaccount.google.com/alert/nt/1752486205000?rfn%3D127%26rfnc%3D1%26eid%3D-6684163010321886283%26et%3D0>\nTo make changes at any time to the access that n8n.cloud has to your data,\ngo to your Google Account\n<https://accounts.google.com/AccountChooser?Email=talhaansari.admissions@gmail.com&continue=https://myaccount.google.com/connections/overview/AXgE0HPgSBVCd0yrS6vlJqLMITHzAGlYy29F0BLHi5pVfi3gAFloK7H9-72Sniv7N0zNMCi9igb0vEEv7nFiPciiYcs?utm_source%3Dsec_alert%26utm_medium%3Demail_notification%26force_all%3Dtrue>\nYou can also see security activity at\nhttps://myaccount.google.com/notifications\nYou received this email to let you know about important changes to your\nGoogle Account and services.\n© 2025 Google LLC, 1600 Amphitheatre Parkway, Mountain View, CA 94043, USA\n",
+          "textAsHtml": "<p>[image: Google]<br/>You allowed <a href=\"http://n8n.cloud\">n8n.cloud</a> access to some of your Google Account data</p><p><a href=\"mailto:talhaansari.admissions@gmail.com\">talhaansari.admissions@gmail.com</a></p><p>If you didn&apos;t allow <a href=\"http://n8n.cloud\">n8n.cloud</a> access to some of your Google Account data,<br/>someone else may be trying to access your Google Account data.</p><p>Take a moment now to check your account activity and secure your account.<br/>Check activity<br/>&lt;<a href=\"https://accounts.google.com/AccountChooser?Email=talhaansari.admissions@gmail.com&continue=https://myaccount.google.com/alert/nt/1752486205000?rfn%3D127%26rfnc%3D1%26eid%3D-6684163010321886283%26et%3D0\">https://accounts.google.com/AccountChooser?Email=talhaansari.admissions@gmail.com&continue=https://myaccount.google.com/alert/nt/1752486205000?rfn%3D127%26rfnc%3D1%26eid%3D-6684163010321886283%26et%3D0</a>&gt;<br/>To make changes at any time to the access that <a href=\"http://n8n.cloud\">n8n.cloud</a> has to your data,<br/>go to your Google Account<br/>&lt;<a href=\"https://accounts.google.com/AccountChooser?Email=talhaansari.admissions@gmail.com&continue=https://myaccount.google.com/connections/overview/AXgE0HPgSBVCd0yrS6vlJqLMITHzAGlYy29F0BLHi5pVfi3gAFloK7H9-72Sniv7N0zNMCi9igb0vEEv7nFiPciiYcs?utm_source%3Dsec_alert%26utm_medium%3Demail_notification%26force_all%3Dtrue\">https://accounts.google.com/AccountChooser?Email=talhaansari.admissions@gmail.com&continue=https://myaccount.google.com/connections/overview/AXgE0HPgSBVCd0yrS6vlJqLMITHzAGlYy29F0BLHi5pVfi3gAFloK7H9-72Sniv7N0zNMCi9igb0vEEv7nFiPciiYcs?utm_source%3Dsec_alert%26utm_medium%3Demail_notification%26force_all%3Dtrue</a>&gt;<br/>You can also see security activity at<br/><a href=\"https://myaccount.google.com/notifications\">https://myaccount.google.com/notifications</a><br/>You received this email to let you know about important changes to your<br/>Google Account and services.<br/>&copy; 2025 Google LLC, 1600 Amphitheatre Parkway, Mountain View, CA 94043, USA</p>",
+          "subject": "Security alert",
+          "date": "2025-07-14T09:43:25.000Z",
+          "to": {
+            "value": [
+              {
+                "address": "talhaansari.admissions@gmail.com",
+                "name": ""
+              }
+            ],
+            "html": "<span class=\"mp_address_group\"><a href=\"mailto:talhaansari.admissions@gmail.com\" class=\"mp_address_email\">talhaansari.admissions@gmail.com</a></span>",
+            "text": "talhaansari.admissions@gmail.com"
+          },
+          "from": {
+            "value": [
+              {
+                "address": "no-reply@accounts.google.com",
+                "name": "Google"
+              }
+            ],
+            "html": "<span class=\"mp_address_group\"><span class=\"mp_address_name\">Google</span> &lt;<a href=\"mailto:no-reply@accounts.google.com\" class=\"mp_address_email\">no-reply@accounts.google.com</a>&gt;</span>",
+            "text": "\"Google\" <no-reply@accounts.google.com>"
+          },
+          "messageId": "<w-RlSs1lTM7xaDlZdVht0w@notifications.google.com>"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Classifier": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Reply to a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "152038bb-6627-43ac-a9b8-d940cfaf6252",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3e10b7c711ed68c56a493c0fb5bf962225dfc8c6ac2f501de8ed8811832cab75"
+  },
+  "id": "COlPzTIvich9258g",
+  "tags": []
+}
